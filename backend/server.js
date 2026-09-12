@@ -1,10 +1,35 @@
 const express = require("express");
 const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+
+// =========================
+// HTTP SERVER
+// =========================
+
+const server = http.createServer(app);
+
+
+// =========================
+// SOCKET.IO
+// =========================
+
+const io = new Server(server, {
+    cors: {
+        origin: "*"
+    }
+});
+
+
+// =========================
+// HEALTH CHECK
+// =========================
 
 app.get("/api/health", (req, res) => {
     res.json({
@@ -13,7 +38,13 @@ app.get("/api/health", (req, res) => {
     });
 });
 
+
+// =========================
+// TASK API
+// =========================
+
 app.post("/api/task", (req, res) => {
+
     const { task } = req.body;
 
     console.log("Received task:", task);
@@ -25,8 +56,67 @@ app.post("/api/task", (req, res) => {
     });
 });
 
+
+// =========================
+// SOCKET CONNECTION
+// =========================
+
+io.on("connection", (socket) => {
+
+    console.log(
+        "Browser extension connected:",
+        socket.id
+    );
+
+     // =========================
+    // TEST BROWSER ACTION
+    // =========================
+
+    socket.on("test-browser-action", () => {
+
+        console.log("Sending browser action...");
+
+        socket.emit("browser-action", {
+
+            action: "open_url",
+
+            payload: {
+                url: "https://github.com"
+            }
+
+        });
+
+    });
+
+    socket.on("action-result", (result) => {
+
+    console.log("Browser action result:", result);
+
+});
+
+
+    socket.on("disconnect", () => {
+
+        console.log(
+            "Browser extension disconnected:",
+            socket.id
+        );
+
+    });
+
+});
+
+
+// =========================
+// START SERVER
+// =========================
+
 const PORT = 5000;
 
-app.listen(PORT, () => {
-    console.log(`Backend running on http://localhost:${PORT}`);
+server.listen(PORT, () => {
+
+    console.log(
+        `Backend running on http://localhost:${PORT}`
+    );
+
 });

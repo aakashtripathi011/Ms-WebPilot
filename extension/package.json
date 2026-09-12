@@ -1,0 +1,15 @@
+{
+  "name": "ms-webpilot-extension",
+  "version": "1.0.0",
+  "description": "Ms WebPilot Chrome Extension",
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}
