@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Ms WebPilot",
+  "version": "1.0.0",
+  "description": "Privacy-first browser agent",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
