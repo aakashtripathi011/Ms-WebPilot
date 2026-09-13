@@ -4,7 +4,7 @@
   "description": "Ms WebPilot Chrome Extension",
   "type": "module",
   "scripts": {
-    "build": "vite build"
+    "build": "vite build && vite build --config vite.content.config.js"
   },
   "dependencies": {
     "socket.io-client": "^4.8.1"

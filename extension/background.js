@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import "./vision/vision.js";
 
 
 // =========================
@@ -25,7 +26,20 @@ socket.on("connect", () => {
         socket.id
     );
 
-     socket.emit("test-browser-action");
+    
+
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+
+    console.log("🔥 BACKGROUND RECEIVED MESSAGE:", message);
+
+    if (message.type === "page-state") {
+
+        console.log("🔥 FORWARDING PAGE STATE TO BACKEND");
+
+        socket.emit("page-state", message.data);
+    }
 
 });
 
@@ -95,5 +109,204 @@ socket.on("browser-action", async (command) => {
         });
 
     }
+
+    // =========================
+// CLICK ELEMENT
+// =========================
+
+if (command.action === "click") {
+
+    const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    });
+
+    if (tabs.length === 0) {
+
+        console.error(
+            "❌ No active tab found"
+        );
+
+        return;
+    }
+
+
+    const tabId = tabs[0].id;
+
+
+    console.log(
+        "🔥 SENDING CLICK TO TAB:",
+        tabId
+    );
+
+
+    chrome.tabs.sendMessage(tabId, {
+
+        type: "click",
+
+        selector: command.payload.selector
+
+    });
+
+}
+
+if (command.action === "type") {
+
+    const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    });
+
+    if (tabs.length === 0) {
+
+        console.error(
+            "❌ No active tab found"
+        );
+
+        return;
+    }
+
+    const tabId = tabs[0].id;
+
+    console.log(
+        "🔥 SENDING TYPE TO TAB:",
+        tabId
+    );
+
+chrome.tabs.sendMessage(tabId, {
+    type: "type",
+    selector: command.payload.selector,
+    text: command.payload.text
+}, (response) => {
+
+    if (chrome.runtime.lastError) {
+
+        console.error(
+            "❌ TYPE MESSAGE ERROR:",
+            chrome.runtime.lastError.message
+        );
+
+        return;
+    }
+
+    console.log(
+        "✅ TYPE RESPONSE FROM CONTENT:",
+        response
+    );
+
+});
+
+
+
+}
+
+if (command.action === "scroll") {
+
+    const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    });
+
+    if (tabs.length === 0) {
+
+        console.error(
+            "❌ No active tab found"
+        );
+
+        return;
+    }
+
+    const tabId = tabs[0].id;
+
+    console.log(
+        "🔥 SENDING SCROLL TO TAB:",
+        tabId
+    );
+
+    chrome.tabs.sendMessage(tabId, {
+        type: "scroll",
+        amount: command.payload.amount
+    }, (response) => {
+
+        if (chrome.runtime.lastError) {
+
+            console.error(
+                "❌ SCROLL MESSAGE ERROR:",
+                chrome.runtime.lastError.message
+            );
+
+            return;
+        }
+
+        console.log(
+            "✅ SCROLL RESPONSE:",
+            response
+        );
+
+    });
+
+}
+
+if (command.action === "back") {
+
+    const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    });
+
+    if (tabs.length === 0) {
+
+        console.error(
+            "❌ No active tab found"
+        );
+
+        return;
+    }
+
+    const tabId = tabs[0].id;
+
+    console.log(
+        "🔥 GOING BACK:",
+        tabId
+    );
+
+    await chrome.tabs.goBack(tabId);
+
+    console.log(
+        "✅ BACK COMPLETED"
+    );
+
+    socket.emit("action-result", {
+
+        success: true,
+
+        action: "back"
+
+    });
+
+}
+
+if (command.action === "screenshot") {
+
+    const image = await chrome.tabs.captureVisibleTab(
+        null,
+        {
+            format: "png"
+        }
+    );
+
+    console.log(
+        "📸 SCREENSHOT CAPTURED"
+    );
+
+    socket.emit("screenshot-result", {
+
+        success: true,
+
+        screenshot: image
+
+    });
+
+}
 
 });
