@@ -1,3 +1,9 @@
+import {
+    sanitizeText,
+    sanitizeInput
+} from "./privacy/privacy.js";
+
+
 console.log("MS WEBPILOT CONTENT SCRIPT STARTED");
 
 
@@ -7,10 +13,47 @@ console.log("MS WEBPILOT CONTENT SCRIPT STARTED");
 
 function getPageState() {
 
+    // Get visible page text
+    const pageText = document.body.innerText.slice(0, 10000);
+
+    // Sanitize visible text before sending it anywhere
+    const sanitizedText = sanitizeText(pageText);
+
+
+    // Find form/input elements
+    const inputs = Array.from(
+        document.querySelectorAll(
+            "input, textarea, select"
+        )
+    );
+
+
+    // Sanitize input information
+    const sanitizedInputs = inputs.map((element) => {
+
+        return {
+            type: element.getAttribute("type") || "",
+            name: element.getAttribute("name") || "",
+            id: element.getAttribute("id") || "",
+            placeholder:
+                element.getAttribute("placeholder") || "",
+
+            value: sanitizeInput(element)
+        };
+
+    });
+
+
     return {
         url: window.location.href,
-        title: document.title,
-        text: document.body.innerText.slice(0, 10000)
+
+        title: sanitizeText(
+            document.title
+        ),
+
+        text: sanitizedText,
+
+        inputs: sanitizedInputs
     };
 
 }
@@ -20,7 +63,15 @@ console.log("🔥 PAGE STATE CREATED");
 
 const pageState = getPageState();
 
-console.log("🔥 SENDING PAGE STATE TO BACKGROUND");
+
+console.log(
+    "🔒 SANITIZED PAGE STATE READY"
+);
+
+console.log(
+    "🔥 SENDING SANITIZED PAGE STATE TO BACKGROUND"
+);
+
 
 chrome.runtime.sendMessage({
     type: "page-state",
@@ -32,172 +83,190 @@ chrome.runtime.sendMessage({
 // RECEIVE BROWSER ACTION
 // =========================
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-
-    console.log(
-        "🔥 CONTENT RECEIVED MESSAGE:",
-        message
-    );
-
-
-    // =========================
-    // CLICK ACTION
-    // =========================
-
-    if (message.type === "click") {
-
-        const selector = message.selector;
+chrome.runtime.onMessage.addListener(
+    (message, sender, sendResponse) => {
 
         console.log(
-            "🔥 CLICK REQUEST:",
-            selector
+            "🔥 CONTENT RECEIVED MESSAGE:",
+            message
         );
 
 
-        const element = document.querySelector(selector);
+        // =========================
+        // CLICK ACTION
+        // =========================
 
+        if (message.type === "click") {
 
-        if (!element) {
+            const selector = message.selector;
 
-            console.error(
-                "❌ ELEMENT NOT FOUND:",
+            console.log(
+                "🔥 CLICK REQUEST:",
                 selector
             );
 
+
+            const element =
+                document.querySelector(selector);
+
+
+            if (!element) {
+
+                console.error(
+                    "❌ ELEMENT NOT FOUND:",
+                    selector
+                );
+
+                sendResponse({
+                    success: false,
+                    error: "Element not found"
+                });
+
+                return;
+            }
+
+
+            console.log(
+                "🔥 ELEMENT FOUND:",
+                element
+            );
+
+
+            element.click();
+
+
+            console.log(
+                "✅ ELEMENT CLICKED:",
+                selector
+            );
+
+
             sendResponse({
-                success: false,
-                error: "Element not found"
+                success: true,
+                selector
             });
 
-            return;
         }
 
 
-        console.log(
-            "🔥 ELEMENT FOUND:",
-            element
-        );
+        // =========================
+        // TYPE ACTION
+        // =========================
+
+        if (message.type === "type") {
+
+            const selector = message.selector;
+            const text = message.text;
+
+            console.log(
+                "🔥 TYPE REQUEST:",
+                selector
+            );
 
 
-        element.click();
+            const element =
+                document.querySelector(selector);
 
 
-        console.log(
-            "✅ ELEMENT CLICKED:",
-            selector
-        );
+            if (!element) {
+
+                console.error(
+                    "❌ INPUT ELEMENT NOT FOUND:",
+                    selector
+                );
+
+                sendResponse({
+                    success: false,
+                    error: "Input element not found"
+                });
+
+                return;
+            }
 
 
-        sendResponse({
-            success: true,
-            selector
-        });
+            console.log(
+                "🔥 INPUT ELEMENT FOUND:",
+                element
+            );
 
-    }
 
-    // =========================
-// TYPE ACTION
-// =========================
+            element.focus();
 
-if (message.type === "type") {
 
-    const selector = message.selector;
-    const text = message.text;
+            const nativeSetter =
+                Object.getOwnPropertyDescriptor(
+                    HTMLInputElement.prototype,
+                    "value"
+                ).set;
 
-    console.log(
-        "🔥 TYPE REQUEST:",
-        selector,
-        text
-    );
 
-    const element = document.querySelector(selector);
+            nativeSetter.call(
+                element,
+                text
+            );
 
-    if (!element) {
 
-        console.error(
-            "❌ INPUT ELEMENT NOT FOUND:",
-            selector
-        );
+            element.dispatchEvent(
+                new Event("input", {
+                    bubbles: true
+                })
+            );
 
-        sendResponse({
-            success: false,
-            error: "Input element not found"
-        });
 
-        return;
-    }
+            element.dispatchEvent(
+                new Event("change", {
+                    bubbles: true
+                })
+            );
 
-    console.log(
-        "🔥 INPUT ELEMENT FOUND:",
-        element
-    );
 
-    element.focus();
+            console.log(
+                "✅ TEXT ENTERED"
+            );
 
-const nativeSetter = Object.getOwnPropertyDescriptor(
-    HTMLInputElement.prototype,
-    "value"
-).set;
 
-nativeSetter.call(element, text);
+            sendResponse({
+                success: true,
+                selector
+            });
 
-element.dispatchEvent(
-    new Event("input", {
-        bubbles: true
-    })
-);
+        }
 
-element.dispatchEvent(
-    new Event("change", {
-        bubbles: true
-    })
-);
 
-console.log(
-    "✅ TEXT ENTERED:",
-    element.value
-);
+        // =========================
+        // SCROLL ACTION
+        // =========================
 
-  
+        if (message.type === "scroll") {
 
-    sendResponse({
-        success: true,
-        selector,
-        text
-    });
+            const amount = message.amount;
 
-}
+            console.log(
+                "🔥 SCROLL REQUEST:",
+                amount
+            );
 
-    // =========================
-    // SCROLL ACTION
-    // =========================
 
-    if (message.type === "scroll") {
+            window.scrollBy({
+                top: amount,
+                left: 0,
+                behavior: "smooth"
+            });
 
-        const amount = message.amount;
 
-        console.log(
-            "🔥 SCROLL REQUEST:",
-            amount
-        );
+            console.log(
+                "✅ PAGE SCROLLED:",
+                amount
+            );
 
-        window.scrollBy({
-            top: amount,
-            left: 0,
-            behavior: "smooth"
-        });
 
-        console.log(
-            "✅ PAGE SCROLLED:",
-            amount
-        );
+            sendResponse({
+                success: true,
+                action: "scroll",
+                amount
+            });
 
-        sendResponse({
-            success: true,
-            action: "scroll",
-            amount
-        });
+        }
 
     }
-
-});
+);

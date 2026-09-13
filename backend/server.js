@@ -169,10 +169,18 @@ io.on("connection", (socket) => {
      
 
 socket.on("page-state", (state) => { 
-    console.log("PAGE STATE"); 
-    console.log("URL:", state.url); 
-    console.log("TITLE:", state.title); 
-    console.log("TEXT:", state.text); 
+ 
+console.log("PAGE STATE");
+
+console.log("URL:", state.url);
+
+console.log("TITLE:", state.title);
+
+console.log("TEXT:", state.text);
+
+console.log("INPUTS:", state.inputs);
+
+
 });
 
 
