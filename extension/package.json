@@ -4,9 +4,10 @@
   "description": "Ms WebPilot Chrome Extension",
   "type": "module",
   "scripts": {
-    "build": "vite build && vite build --config vite.content.config.js"
+    "build": "vite build && vite build --config vite.content.config.js && vite build --config vite.vision.config.js"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {

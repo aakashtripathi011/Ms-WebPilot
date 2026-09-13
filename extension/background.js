@@ -1,5 +1,6 @@
 import { io } from "socket.io-client";
-import "./vision/vision.js";
+
+
 
 
 // =========================
@@ -9,6 +10,7 @@ import "./vision/vision.js";
 const socket = io("http://localhost:5000", {
     transports: ["websocket"]
 });
+
 
 
 // =========================
@@ -295,18 +297,59 @@ if (command.action === "screenshot") {
         }
     );
 
-    console.log(
-        "📸 SCREENSHOT CAPTURED"
+    console.log("📸 SCREENSHOT CAPTURED");
+
+    chrome.runtime.sendMessage(
+        {
+            type: "analyze-screenshot",
+            screenshot: image
+        },
+        (response) => {
+
+            if (chrome.runtime.lastError) {
+
+                console.error(
+                    "❌ VISION MESSAGE ERROR:",
+                    chrome.runtime.lastError.message
+                );
+
+                return;
+            }
+
+            console.log(
+                "🧠 LOCAL VISION RESULT:",
+                response
+            );
+
+            if (response?.success) {
+
+                socket.emit("vision-result", {
+                    success: true,
+                    result: response.result
+                });
+
+            } else {
+
+                socket.emit("vision-result", {
+                    success: false,
+                    error: response?.error
+                });
+
+            }
+        }
     );
-
-    socket.emit("screenshot-result", {
-
-        success: true,
-
-        screenshot: image
-
-    });
-
 }
 
+});
+
+chrome.runtime.onInstalled.addListener(async () => {
+    console.log("🔥 EXTENSION INSTALLED");
+
+    await chrome.offscreen.createDocument({
+        url: "vision.html",
+        reasons: ["DOM_PARSER"],
+        justification: "Run local vision model in a DOM-capable extension environment"
+    });
+
+    console.log("✅ VISION OFFSCREEN DOCUMENT CREATED");
 });
