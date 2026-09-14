@@ -1,6 +1,4 @@
-// =========================
-// Ms WebPilot Privacy Layer
-// =========================
+
 
 console.log("🔒 PRIVACY MODULE LOADED");
 
@@ -21,7 +19,7 @@ const phoneRegex =
 
 // Credit / debit card-like number
 const cardRegex =
-    /\b(?:\d[ -]*?){13,19}\b/g;
+    /\b(?:\d[ -]?){13,19}\b/g;
 
 
 // API keys / secret tokens
@@ -30,8 +28,10 @@ const apiKeyRegex =
 
 
 // Aadhaar-like 12 digit number
+// Requires proper 4-4-4 grouping and prevents
+// matching the first 12 digits of a longer card number.
 const aadhaarRegex =
-    /\b\d{4}[ -]?\d{4}[ -]?\d{4}\b/g;
+    /(?<!\d)\d{4}[ -]\d{4}[ -]\d{4}(?![ -]?\d)/g;
 
 
 // =========================
@@ -46,35 +46,59 @@ export function sanitizeText(text) {
 
     let sanitized = text;
 
-    // Email
+
+    // =========================
+    // EMAIL
+    // =========================
+
     sanitized = sanitized.replace(
         emailRegex,
         "[EMAIL]"
     );
 
-    // Phone
+
+    // =========================
+    // PHONE
+    // =========================
+
     sanitized = sanitized.replace(
         phoneRegex,
         "[PHONE]"
     );
 
-    // API keys
+
+    // =========================
+    // API KEYS
+    // =========================
+
     sanitized = sanitized.replace(
         apiKeyRegex,
         "[API_KEY]"
     );
 
-    // Aadhaar-like numbers
+
+    // =========================
+    // CARD
+    // IMPORTANT:
+    // CARD MUST BE DETECTED BEFORE
+    // AADHAAR TO AVOID OVERLAP
+    // =========================
+
+    sanitized = sanitized.replace(
+        cardRegex,
+        "[CARD]"
+    );
+
+
+    // =========================
+    // AADHAAR / GOVERNMENT ID
+    // =========================
+
     sanitized = sanitized.replace(
         aadhaarRegex,
         "[GOV_ID]"
     );
 
-    // Card-like numbers
-    sanitized = sanitized.replace(
-        cardRegex,
-        "[CARD]"
-    );
 
     return sanitized;
 }
@@ -102,21 +126,26 @@ export function sanitizeInput(element) {
         return null;
     }
 
+
     const type =
         (element.getAttribute("type") || "")
             .toLowerCase();
+
 
     const name =
         (element.getAttribute("name") || "")
             .toLowerCase();
 
+
     const id =
         (element.getAttribute("id") || "")
             .toLowerCase();
 
+
     const autocomplete =
         (element.getAttribute("autocomplete") || "")
             .toLowerCase();
+
 
     const placeholder =
         (element.getAttribute("placeholder") || "")
@@ -139,6 +168,11 @@ export function sanitizeInput(element) {
             "pwd"
         ])
     ) {
+
+        console.log(
+            "🔐 PASSWORD FIELD DETECTED"
+        );
+
         return "[PASSWORD]";
     }
 
@@ -155,6 +189,11 @@ export function sanitizeInput(element) {
             "e-mail"
         ])
     ) {
+
+        console.log(
+            "📧 EMAIL FIELD DETECTED"
+        );
+
         return "[EMAIL]";
     }
 
@@ -173,6 +212,11 @@ export function sanitizeInput(element) {
             "contact"
         ])
     ) {
+
+        console.log(
+            "📱 PHONE FIELD DETECTED"
+        );
+
         return "[PHONE]";
     }
 
@@ -193,6 +237,11 @@ export function sanitizeInput(element) {
             "cc-number"
         ])
     ) {
+
+        console.log(
+            "💳 CARD FIELD DETECTED"
+        );
+
         return "[CARD]";
     }
 
@@ -211,6 +260,11 @@ export function sanitizeInput(element) {
             "cc-csc"
         ])
     ) {
+
+        console.log(
+            "🔒 CARD SECURITY CODE FIELD DETECTED"
+        );
+
         return "[CARD_SECURITY_CODE]";
     }
 
@@ -238,6 +292,11 @@ export function sanitizeInput(element) {
             "govtid"
         ])
     ) {
+
+        console.log(
+            "🪪 GOVERNMENT ID FIELD DETECTED"
+        );
+
         return "[GOV_ID]";
     }
 
@@ -257,6 +316,11 @@ export function sanitizeInput(element) {
             "swift"
         ])
     ) {
+
+        console.log(
+            "🏦 BANK INFORMATION FIELD DETECTED"
+        );
+
         return "[BANK_INFO]";
     }
 
@@ -278,6 +342,11 @@ export function sanitizeInput(element) {
             "token"
         ])
     ) {
+
+        console.log(
+            "🔑 API KEY / TOKEN FIELD DETECTED"
+        );
+
         return "[API_KEY]";
     }
 
@@ -299,6 +368,11 @@ export function sanitizeInput(element) {
             "pin-code"
         ])
     ) {
+
+        console.log(
+            "📍 ADDRESS FIELD DETECTED"
+        );
+
         return "[ADDRESS]";
     }
 
@@ -313,3 +387,50 @@ export function sanitizeInput(element) {
         ""
     );
 }
+
+
+// =========================
+// PRIVACY TEST
+// =========================
+
+console.log(
+    "🧪 PRIVACY TEST START"
+);
+
+
+console.log(
+    "EMAIL:",
+    sanitizeText(
+        "Contact me at test@example.com"
+    )
+);
+
+
+console.log(
+    "PHONE:",
+    sanitizeText(
+        "Call +91 9876543210"
+    )
+);
+
+
+console.log(
+    "AADHAAR:",
+    sanitizeText(
+        "ID: 1234 5678 9012"
+    )
+);
+
+
+console.log(
+    "CARD:",
+    sanitizeText(
+        "Card: 4111 1111 1111 1111"
+    )
+);
+
+
+console.log(
+    "🧪 PRIVACY TEST END"
+);
+

@@ -353,3 +353,37 @@ chrome.runtime.onInstalled.addListener(async () => {
 
     console.log("✅ VISION OFFSCREEN DOCUMENT CREATED");
 });
+
+chrome.runtime.onMessage.addListener(
+    (message) => {
+
+        if (
+            message.type ===
+            "debug-sanitized-screenshot"
+        ) {
+
+            console.log(
+                "🧪 RECEIVED SANITIZED SCREENSHOT"
+            );
+
+            const newTabUrl =
+                "data:text/html," +
+                encodeURIComponent(`
+                    <html>
+                        <body style="margin:0;background:#111;">
+                            <img
+                                src="${message.screenshot}"
+                                style="max-width:100%;height:auto;"
+                            />
+                        </body>
+                    </html>
+                `);
+
+            chrome.tabs.create({
+                url: newTabUrl
+            });
+
+        }
+
+    }
+);
