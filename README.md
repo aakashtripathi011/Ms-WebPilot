@@ -1,4 +1,4 @@
-🕵️ Screen Sense — A Privacy-First Browser Agent
+🕵️ Ms Webpilot — A Privacy-First Browser Agent
 
 An intelligent browser automation agent that understands your screen, protects your sensitive data locally, and safely executes tasks — without ever sending raw personal information to the cloud.
 
